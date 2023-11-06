@@ -2,8 +2,7 @@ import { Detail } from "@raycast/api";
 import { useExec } from "@raycast/utils";
 import { cpus, homedir } from "os";
 import { join } from "path";
-import { exec } from "child_process";
-import { useEffect, useState } from "react";
+// import { useEffect, useState } from "react";
 
 // Construct the path to Pandoc executable
 const pandocPrefix = cpus()[0].model.includes("Apple") ? "/opt/homebrew" : "/usr/local";
