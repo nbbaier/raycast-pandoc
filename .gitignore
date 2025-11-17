@@ -1,4 +1,6 @@
 .DS_Store
 .DS_STORE
 /node_modules
+/dist
+/coverage
 raycast-env.d.ts

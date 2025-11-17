@@ -35,12 +35,30 @@
       "required": false,
       "default": "pdf",
       "data": [
-        { "title": "PDF", "value": "pdf" },
-        { "title": "HTML", "value": "html" },
-        { "title": "Microsoft Word (DOCX)", "value": "docx" },
-        { "title": "EPUB", "value": "epub" },
-        { "title": "Markdown", "value": "markdown" },
-        { "title": "LaTeX", "value": "latex" }
+        {
+          "title": "PDF",
+          "value": "pdf"
+        },
+        {
+          "title": "HTML",
+          "value": "html"
+        },
+        {
+          "title": "Microsoft Word (DOCX)",
+          "value": "docx"
+        },
+        {
+          "title": "EPUB",
+          "value": "epub"
+        },
+        {
+          "title": "Markdown",
+          "value": "markdown"
+        },
+        {
+          "title": "LaTeX",
+          "value": "latex"
+        }
       ]
     },
     {
@@ -58,15 +76,20 @@
   "devDependencies": {
     "@raycast/eslint-config": "^1.0.11",
     "@types/node": "^20.16.0",
+    "@vitest/coverage-v8": "^2.1.0",
     "eslint": "^8.57.0",
     "prettier": "^3.3.0",
-    "typescript": "^5.6.0"
+    "typescript": "^5.6.0",
+    "vitest": "^2.1.0"
   },
   "scripts": {
     "build": "ray build -e dist",
     "dev": "ray develop",
     "fix-lint": "ray lint --fix",
     "lint": "ray lint",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
     "publish": "npx @raycast/api@latest publish"
   }
 }
