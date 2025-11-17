@@ -7,6 +7,7 @@ import {
   getPreferenceValues,
   open,
   closeMainWindow,
+  Clipboard,
 } from "@raycast/api";
 import { useState } from "react";
 import { execSync } from "child_process";
@@ -32,9 +33,42 @@ interface FormValues {
   customOptions: string;
 }
 
+/**
+ * Builds the Pandoc command string from form values
+ */
+function buildPandocCommand(
+  pandocPath: string,
+  inputPath: string,
+  outputPath: string,
+  inputFormat: string,
+  outputFormat: string,
+  customOptions: string
+): string {
+  const args = [
+    `"${inputPath}"`,
+    "-o",
+    `"${outputPath}"`,
+    "-f",
+    inputFormat || "markdown",
+    "-t",
+    outputFormat,
+  ];
+
+  // Add custom options if provided
+  if (customOptions.trim()) {
+    args.push(customOptions.trim());
+  }
+
+  return `"${pandocPath}" ${args.join(" ")}`;
+}
+
 export default function Command() {
   const preferences = getPreferenceValues<Preferences>();
   const [inputFormat, setInputFormat] = useState<string>("");
+  const [selectedFile, setSelectedFile] = useState<string>("");
+  const [outputFormat, setOutputFormat] = useState<string>(preferences.defaultOutputFormat);
+  const [outputFile, setOutputFile] = useState<string>("");
+  const [customOptions, setCustomOptions] = useState<string>("");
 
   // Check if Pandoc is installed
   const pandocCheck = checkPandocInstallation();
@@ -44,6 +78,55 @@ export default function Command() {
       style: Toast.Style.Failure,
       title: "Pandoc Not Found",
       message: pandocCheck.error || "Please install Pandoc from https://pandoc.org",
+    });
+  }
+
+  async function handleCopyCommand() {
+    if (!pandocCheck.isInstalled || !pandocCheck.path) {
+      await showToast({
+        style: Toast.Style.Failure,
+        title: "Pandoc Not Available",
+        message: "Please install Pandoc first",
+      });
+      return;
+    }
+
+    if (!selectedFile) {
+      await showToast({
+        style: Toast.Style.Failure,
+        title: "No Input File Selected",
+        message: "Please select an input file first",
+      });
+      return;
+    }
+
+    // Determine output path
+    let outputPath: string;
+    if (outputFile.trim()) {
+      outputPath = outputFile.trim();
+    } else {
+      const inputDir = dirname(selectedFile);
+      const outputDir = preferences.outputDirectory?.trim() || inputDir;
+      const inputBasename = basename(selectedFile, extname(selectedFile));
+      const outputExt = getOutputExtension(outputFormat);
+      outputPath = join(outputDir, `${inputBasename}${outputExt}`);
+    }
+
+    // Build command
+    const command = buildPandocCommand(
+      pandocCheck.path,
+      selectedFile,
+      outputPath,
+      inputFormat,
+      outputFormat,
+      customOptions
+    );
+
+    await Clipboard.copy(command);
+    await showToast({
+      style: Toast.Style.Success,
+      title: "Command Copied",
+      message: "Pandoc command copied to clipboard",
     });
   }
 
@@ -112,22 +195,14 @@ export default function Command() {
 
     try {
       // Build pandoc command
-      const args = [
-        `"${inputPath}"`,
-        "-o",
-        `"${outputPath}"`,
-        "-f",
-        inputFormat || "markdown",
-        "-t",
+      const command = buildPandocCommand(
+        pandocCheck.path,
+        inputPath,
+        outputPath,
+        inputFormat,
         values.outputFormat,
-      ];
-
-      // Add custom options if provided
-      if (values.customOptions.trim()) {
-        args.push(values.customOptions.trim());
-      }
-
-      const command = `"${pandocCheck.path}" ${args.join(" ")}`;
+        values.customOptions
+      );
 
       // Execute conversion
       execSync(command, { encoding: "utf-8", stdio: "pipe" });
@@ -167,6 +242,11 @@ export default function Command() {
       actions={
         <ActionPanel>
           <Action.SubmitForm title="Convert Document" onSubmit={handleSubmit} />
+          <Action
+            title="Copy Command"
+            onAction={handleCopyCommand}
+            shortcut={{ modifiers: ["cmd"], key: "c" }}
+          />
         </ActionPanel>
       }
     >
@@ -177,6 +257,7 @@ export default function Command() {
         canChooseDirectories={false}
         onChange={(files) => {
           if (files.length > 0) {
+            setSelectedFile(files[0]);
             const detectedFormat = detectInputFormat(files[0]);
             if (detectedFormat) {
               setInputFormat(detectedFormat);
@@ -201,6 +282,8 @@ export default function Command() {
       <Form.Dropdown
         id="outputFormat"
         title="Output Format"
+        value={outputFormat}
+        onChange={setOutputFormat}
         defaultValue={preferences.defaultOutputFormat}
         storeValue
       >
@@ -214,6 +297,8 @@ export default function Command() {
         title="Output File"
         placeholder="Leave empty to auto-generate based on input filename"
         info="Optional: Specify custom output path, or leave empty to use input filename with new extension"
+        value={outputFile}
+        onChange={setOutputFile}
       />
 
       <Form.TextField
@@ -221,6 +306,8 @@ export default function Command() {
         title="Custom Pandoc Options"
         placeholder="--standalone --toc --css=style.css"
         info="Optional: Additional command-line options for Pandoc"
+        value={customOptions}
+        onChange={setCustomOptions}
       />
 
       <Form.Description
