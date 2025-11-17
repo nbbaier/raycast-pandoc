@@ -203,9 +203,29 @@ export default function Command() {
       values.customOptions
     );
 
+    // Prepare enhanced environment with common LaTeX locations in PATH
+    const enhancedEnv = { ...process.env };
+    const additionalPaths = [
+      "/Library/TeX/texbin", // MacTeX/BasicTeX standard location
+      "/usr/local/texlive/2024/bin/universal-darwin",
+      "/usr/local/texlive/2024/bin/x86_64-darwin",
+      "/usr/local/texlive/2023/bin/universal-darwin",
+      "/usr/local/texlive/2023/bin/x86_64-darwin",
+      "/opt/homebrew/opt/texlive/bin",
+      "/usr/local/bin",
+      "/opt/homebrew/bin",
+    ];
+
+    // Add additional paths to PATH if they exist
+    const currentPath = enhancedEnv.PATH || "";
+    const newPaths = additionalPaths.filter((p) => existsSync(p));
+    if (newPaths.length > 0) {
+      enhancedEnv.PATH = `${newPaths.join(":")}:${currentPath}`;
+    }
+
     try {
       // Execute conversion
-      execSync(command, { encoding: "utf-8" });
+      execSync(command, { encoding: "utf-8", env: enhancedEnv });
 
       await toast.hide();
       await showToast({
@@ -237,7 +257,8 @@ export default function Command() {
       errorDetails.push(`\nInput File: ${inputPath}`);
       errorDetails.push(`Output File: ${outputPath}`);
       errorDetails.push(`Input Format: ${inputFormat || "auto-detect"}`);
-      errorDetails.push(`Output Format: ${values.outputFormat}\n`);
+      errorDetails.push(`Output Format: ${values.outputFormat}`);
+      errorDetails.push(`\nPATH: ${enhancedEnv.PATH}\n`);
 
       if (error.stderr) {
         errorDetails.push(`\nStderr:\n${error.stderr}`);
