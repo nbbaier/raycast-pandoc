@@ -8,23 +8,59 @@
   "license": "MIT",
   "commands": [
     {
-      "name": "index",
-      "title": "Pandoc",
-      "description": "Template with a plain detail view",
+      "name": "convert",
+      "title": "Convert Document",
+      "description": "Convert documents between different formats using Pandoc",
+      "mode": "view"
+    },
+    {
+      "name": "version",
+      "title": "Check Pandoc Version",
+      "description": "Display installed Pandoc version and system information",
+      "mode": "view"
+    },
+    {
+      "name": "formats",
+      "title": "List Supported Formats",
+      "description": "View all input and output formats supported by Pandoc",
       "mode": "view"
     }
   ],
+  "preferences": [
+    {
+      "name": "defaultOutputFormat",
+      "title": "Default Output Format",
+      "description": "The default format to convert documents to",
+      "type": "dropdown",
+      "required": false,
+      "default": "pdf",
+      "data": [
+        { "title": "PDF", "value": "pdf" },
+        { "title": "HTML", "value": "html" },
+        { "title": "Microsoft Word (DOCX)", "value": "docx" },
+        { "title": "EPUB", "value": "epub" },
+        { "title": "Markdown", "value": "markdown" },
+        { "title": "LaTeX", "value": "latex" }
+      ]
+    },
+    {
+      "name": "outputDirectory",
+      "title": "Output Directory",
+      "description": "Default directory for converted files (leave empty for source directory)",
+      "type": "textfield",
+      "required": false
+    }
+  ],
   "dependencies": {
-    "@raycast/api": "^1.61.1",
-    "@raycast/utils": "^1.10.0"
+    "@raycast/api": "^1.103.3",
+    "@raycast/utils": "^1.17.0"
   },
   "devDependencies": {
-    "@raycast/eslint-config": "1.0.8",
-    "@types/node": "20.8.10",
-    "@types/react": "18.2.34",
-    "eslint": "^8.53.0",
-    "prettier": "^3.0.3",
-    "typescript": "^5.2.2"
+    "@raycast/eslint-config": "^1.0.11",
+    "@types/node": "^20.16.0",
+    "eslint": "^8.57.0",
+    "prettier": "^3.3.0",
+    "typescript": "^5.6.0"
   },
   "scripts": {
     "build": "ray build -e dist",
