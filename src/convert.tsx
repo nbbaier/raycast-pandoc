@@ -193,19 +193,19 @@ export default function Command() {
       message: `${basename(inputPath)} → ${values.outputFormat}`,
     });
 
-    try {
-      // Build pandoc command
-      const command = buildPandocCommand(
-        pandocCheck.path,
-        inputPath,
-        outputPath,
-        inputFormat,
-        values.outputFormat,
-        values.customOptions
-      );
+    // Build pandoc command
+    const command = buildPandocCommand(
+      pandocCheck.path,
+      inputPath,
+      outputPath,
+      inputFormat,
+      values.outputFormat,
+      values.customOptions
+    );
 
+    try {
       // Execute conversion
-      execSync(command, { encoding: "utf-8", stdio: "pipe" });
+      execSync(command, { encoding: "utf-8" });
 
       await toast.hide();
       await showToast({
@@ -227,12 +227,61 @@ export default function Command() {
       });
 
       await closeMainWindow();
-    } catch (error) {
+    } catch (error: any) {
       await toast.hide();
+
+      // Build detailed error message
+      const errorDetails: string[] = [];
+      errorDetails.push("=== PANDOC CONVERSION ERROR ===\n");
+      errorDetails.push(`Command: ${command}\n`);
+      errorDetails.push(`\nInput File: ${inputPath}`);
+      errorDetails.push(`Output File: ${outputPath}`);
+      errorDetails.push(`Input Format: ${inputFormat || "auto-detect"}`);
+      errorDetails.push(`Output Format: ${values.outputFormat}\n`);
+
+      if (error.stderr) {
+        errorDetails.push(`\nStderr:\n${error.stderr}`);
+      }
+      if (error.stdout) {
+        errorDetails.push(`\nStdout:\n${error.stdout}`);
+      }
+      if (error.message) {
+        errorDetails.push(`\nError Message:\n${error.message}`);
+      }
+
+      const fullErrorText = errorDetails.join("\n");
+
+      // Extract short error message for toast
+      const shortError = error.stderr
+        ? error.stderr.split("\n")[0]
+        : error.message || "Unknown error occurred";
+
       await showToast({
         style: Toast.Style.Failure,
         title: "Conversion Failed",
-        message: error instanceof Error ? error.message : "Unknown error occurred",
+        message: shortError.substring(0, 100),
+        primaryAction: {
+          title: "Copy Error Details",
+          onAction: async () => {
+            await Clipboard.copy(fullErrorText);
+            await showToast({
+              style: Toast.Style.Success,
+              title: "Error Details Copied",
+              message: "Full error details copied to clipboard",
+            });
+          },
+        },
+        secondaryAction: {
+          title: "Copy Command",
+          onAction: async () => {
+            await Clipboard.copy(command);
+            await showToast({
+              style: Toast.Style.Success,
+              title: "Command Copied",
+              message: "Pandoc command copied to clipboard",
+            });
+          },
+        },
       });
     }
   }
